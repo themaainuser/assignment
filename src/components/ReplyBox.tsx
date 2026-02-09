@@ -1,3 +1,4 @@
+import { useState, useRef, type KeyboardEvent } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import {
@@ -13,9 +14,100 @@ import {
     Forward
 } from "lucide-react"
 
+// Mock Users Data
+interface User {
+    id: string
+    name: string
+    email: string
+    avatar?: string
+}
+
+const MOCK_USERS: User[] = [
+    { id: "1", name: "Alice Westervelt", email: "awestervelt@email.com", avatar: "https://github.com/shadcn.png" },
+    { id: "2", name: "Bob Smith", email: "bob.smith@example.com" },
+    { id: "3", name: "Charlie Brown", email: "charlie@peanuts.com" },
+    { id: "4", name: "Diana Prince", email: "diana@themyscira.com" },
+    { id: "5", name: "Evan Wright", email: "evan.wright@news.com" },
+]
+
 export function ReplyBox() {
+    const [value, setValue] = useState("")
+    const [showMentions, setShowMentions] = useState(false)
+    const [mentionQuery, setMentionQuery] = useState("")
+    const [mentionIndex, setMentionIndex] = useState(0)
+    const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+    const filteredUsers = MOCK_USERS.filter(user =>
+        user.name.toLowerCase().includes(mentionQuery.toLowerCase()) ||
+        user.email.toLowerCase().includes(mentionQuery.toLowerCase())
+    )
+
+    const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        const newValue = e.target.value
+        setValue(newValue)
+
+        const cursorIndex = e.target.selectionStart
+        const textBeforeCursor = newValue.substring(0, cursorIndex)
+        const lastAt = textBeforeCursor.lastIndexOf("@")
+
+        if (lastAt !== -1) {
+            const query = textBeforeCursor.substring(lastAt + 1)
+            if (!query.includes("\n") && query.length < 20) {
+                setMentionQuery(query)
+                setShowMentions(true)
+                setMentionIndex(0)
+                if (textareaRef.current) {
+
+                }
+                return
+            }
+        }
+        setShowMentions(false)
+    }
+
+    const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+        if (showMentions) {
+            if (e.key === "ArrowDown") {
+                e.preventDefault()
+                setMentionIndex(prev => (prev + 1) % filteredUsers.length)
+            } else if (e.key === "ArrowUp") {
+                e.preventDefault()
+                setMentionIndex(prev => (prev - 1 + filteredUsers.length) % filteredUsers.length)
+            } else if (e.key === "Enter" || e.key === "Tab") {
+                e.preventDefault()
+                if (filteredUsers.length > 0) {
+                    selectUser(filteredUsers[mentionIndex])
+                }
+            } else if (e.key === "Escape") {
+                setShowMentions(false)
+            }
+        }
+    }
+
+    const selectUser = (user: User) => {
+        const cursorIndex = textareaRef.current?.selectionStart || 0
+        const textBeforeCursor = value.substring(0, cursorIndex)
+        const lastAt = textBeforeCursor.lastIndexOf("@")
+
+        const newValue =
+            value.substring(0, lastAt) +
+            `@${user.name} ` +
+            value.substring(cursorIndex)
+
+        setValue(newValue)
+        setShowMentions(false)
+        setTimeout(() => {
+            if (textareaRef.current) {
+                textareaRef.current.focus()
+                // Cursor position: before @ + name + space
+                const newCursorPos = lastAt + user.name.length + 2
+                textareaRef.current.setSelectionRange(newCursorPos, newCursorPos)
+            }
+        }, 0)
+    }
+
     return (
-        <div className="bg-white border rounded-lg shadow-sm m-6 mb-0">
+        <div className="bg-white border rounded-lg shadow-sm m-6 mb-0 relative">
             <div className="flex border-b">
                 <button className="px-4 py-2.5 text-sm font-semibold text-gray-800 border-b-2 border-blue-600">
                     Public Reply
@@ -44,9 +136,36 @@ export function ReplyBox() {
             {/* Editor Area */}
             <div className="p-4 min-h-[120px] relative">
                 <textarea
+                    ref={textareaRef}
+                    value={value}
+                    onChange={handleInput}
+                    onKeyDown={handleKeyDown}
                     className="w-full h-full resize-none outline-none text-sm text-gray-700 placeholder:text-gray-400 min-h-[80px]"
                     placeholder="Add a reply..."
                 />
+
+                {/* Mentions Dropdown */}
+                {showMentions && filteredUsers.length > 0 && (
+                    <div className="absolute left-4 top-16 z-20 w-64 bg-white border rounded-lg shadow-lg max-h-48 overflow-y-auto animate-in fade-in zoom-in-95 duration-100">
+                        {filteredUsers.map((user, index) => (
+                            <button
+                                key={user.id}
+                                onClick={() => selectUser(user)}
+                                className={`w-full text-left px-3 py-2 flex items-center gap-2 text-sm hover:bg-blue-50 transition-colors ${index === mentionIndex ? "bg-blue-50" : ""
+                                    }`}
+                            >
+                                <Avatar className="w-6 h-6">
+                                    <AvatarImage src={user.avatar} />
+                                    <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                                <div className="flex flex-col">
+                                    <span className="font-medium text-slate-800">{user.name}</span>
+                                    <span className="text-xs text-slate-500">{user.email}</span>
+                                </div>
+                            </button>
+                        ))}
+                    </div>
+                )}
             </div>
 
             {/* Toolbar */}

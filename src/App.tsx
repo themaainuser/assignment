@@ -29,7 +29,6 @@ export default function Page() {
   const [tickets, setTickets] = useState<Ticket[]>([])
 
 
-  // Initialize with MOCK data
   useEffect(() => {
     setTickets(MOCK_TICKETS)
     setCheckpoints(MOCK_CHECKPOINTS)
@@ -99,10 +98,7 @@ export default function Page() {
             <AppSidebar />
             <SidebarInset>
               <div className="flex flex-col h-full overflow-hidden">
-
-                {/* Main 2-Pane Content area (Sidebar is pane 1 handled by SidebarProvider) */}
                 <div className="flex flex-1 overflow-hidden">
-
                   <div className={`
                         w-full md:w-80 lg:w-96 border-r bg-white shrink-0 flex flex-col
                         ${selectedTicketId ? 'hidden md:flex' : 'flex'}
@@ -113,7 +109,6 @@ export default function Page() {
                       onSelect={setSelectedTicketId}
                     />
                   </div>
-
                   <div className={`
                         flex-1 flex flex-col min-w-0 bg-slate-50
                         ${!selectedTicketId ? 'hidden md:flex' : 'flex'}

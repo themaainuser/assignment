@@ -1,3 +1,4 @@
+
 import type { Ticket, Checkpoint } from "@/types"
 import { Checkpoints } from "./Checkpoints"
 import { ReplyBox } from "./ReplyBox"
@@ -19,6 +20,8 @@ interface TicketDetailProps {
 }
 
 export function TicketDetail({ ticket, checkpoints, onCheckpointToggle, onBack }: TicketDetailProps) {
+
+
     if (!ticket) {
         return (
             <div className="flex-1 flex items-center justify-center text-gray-400">
@@ -26,6 +29,7 @@ export function TicketDetail({ ticket, checkpoints, onCheckpointToggle, onBack }
             </div>
         )
     }
+
 
     return (
         <div className="flex-1 flex flex-col h-full bg-slate-50 overflow-hidden">
